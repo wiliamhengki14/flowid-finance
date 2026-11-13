@@ -1,19 +1,7 @@
 # ============================================================
-# Stage 1: Build Frontend Assets (Vite + React + Tailwind)
+# PHP Application Container (Production)
 # ============================================================
-FROM node:20-alpine AS frontend
-WORKDIR /app
-
-COPY package*.json ./
-RUN npm ci || npm install
-
-COPY . .
-RUN npm run build
-
-# ============================================================
-# Stage 2: PHP Application Container (Production)
-# ============================================================
-FROM php:8.4-fpm-alpine
+FROM php:8.3-fpm-alpine
 
 # Install essential system packages
 RUN apk add --no-cache \
@@ -25,15 +13,14 @@ RUN apk add --no-cache \
 # Install official PHP extension installer
 COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
 
-# Install PHP extensions cleanly with all build dependencies handled automatically
+# Install PHP extensions cleanly (opcache is already built into php-fpm)
 RUN install-php-extensions \
     pdo_pgsql \
     pdo_mysql \
     zip \
     intl \
     bcmath \
-    gd \
-    opcache
+    gd
 
 # Get official Composer 2
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -50,11 +37,8 @@ COPY conf/supervisor/supervisord.conf /etc/supervisord.conf
 COPY conf/start.sh /start.sh
 RUN sed -i 's/\r$//' /start.sh && chmod +x /start.sh
 
-# Copy application source code
+# Copy application source code (including pre-compiled public/build assets)
 COPY . .
-
-# Copy compiled frontend assets from Stage 1
-COPY --from=frontend /app/public/build ./public/build
 
 # Install PHP dependencies for production
 ENV COMPOSER_ALLOW_SUPERUSER=1
