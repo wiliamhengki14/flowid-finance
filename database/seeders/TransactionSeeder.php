@@ -20,6 +20,10 @@ class TransactionSeeder extends Seeder
             return;
         }
 
+        if (Transaction::count() > 0) {
+            return;
+        }
+
         $categories = Category::all()->keyBy('name');
 
         $catPenjualan = $categories->get('Penjualan Papan Bunga');
