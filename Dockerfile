@@ -15,27 +15,25 @@ RUN npm run build
 # ============================================================
 FROM php:8.4-fpm-alpine
 
-# Install system dependencies & build tools
+# Install essential system packages
 RUN apk add --no-cache \
     bash \
     nginx \
     supervisor \
-    libpq-dev \
-    libzip-dev \
-    icu-dev \
-    oniguruma-dev \
-    freetype-dev \
-    libjpeg-turbo-dev \
-    libpng-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) \
-        pdo_pgsql \
-        pdo_mysql \
-        zip \
-        intl \
-        bcmath \
-        gd \
-        opcache
+    curl
+
+# Install official PHP extension installer
+COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
+
+# Install PHP extensions cleanly with all build dependencies handled automatically
+RUN install-php-extensions \
+    pdo_pgsql \
+    pdo_mysql \
+    zip \
+    intl \
+    bcmath \
+    gd \
+    opcache
 
 # Get official Composer 2
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -43,11 +41,14 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www/html
 
+# Create runtime directories
+RUN mkdir -p /run/nginx /var/log/supervisor
+
 # Copy server configurations
 COPY conf/nginx/nginx-site.conf /etc/nginx/http.d/default.conf
 COPY conf/supervisor/supervisord.conf /etc/supervisord.conf
 COPY conf/start.sh /start.sh
-RUN chmod +x /start.sh
+RUN sed -i 's/\r$//' /start.sh && chmod +x /start.sh
 
 # Copy application source code
 COPY . .
@@ -71,4 +72,3 @@ ENV LOG_CHANNEL=stderr
 EXPOSE 80
 
 CMD ["/start.sh"]
-

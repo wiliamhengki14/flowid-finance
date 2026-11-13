@@ -3,8 +3,9 @@ set -e
 
 PORT=${PORT:-80}
 echo "==> Configuring Nginx port to $PORT..."
-sed -i "s/listen 80;/listen $PORT;/g" /etc/nginx/http.d/default.conf
-sed -i "s/listen \[::\]:80;/listen \[::\]:$PORT;/g" /etc/nginx/http.d/default.conf
+mkdir -p /run/nginx
+sed -i "s/listen [0-9]\+ default_server;/listen $PORT default_server;/g" /etc/nginx/http.d/default.conf
+sed -i "s/listen \[::\]:[0-9]\+ default_server;/listen \[::\]:$PORT default_server;/g" /etc/nginx/http.d/default.conf
 
 echo "==> Optimizing Laravel cache..."
 php artisan config:cache || true
@@ -19,4 +20,3 @@ php artisan storage:link || true
 
 echo "==> Starting web services via Supervisor..."
 exec /usr/bin/supervisord -c /etc/supervisord.conf
-
