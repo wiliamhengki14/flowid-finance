@@ -19,3 +19,4 @@ php artisan storage:link || true
 
 echo "==> Starting web services via Supervisor..."
 exec /usr/bin/supervisord -c /etc/supervisord.conf
+

@@ -71,3 +71,4 @@ ENV LOG_CHANNEL=stderr
 EXPOSE 80
 
 CMD ["/start.sh"]
+
