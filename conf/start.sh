@@ -52,6 +52,9 @@ cat <<'EOF' >> /etc/nginx/http.d/default.conf
         fastcgi_pass 127.0.0.1:9000;
         fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
         include fastcgi_params;
+        fastcgi_param HTTP_X_FORWARDED_PROTO $http_x_forwarded_proto;
+        fastcgi_param HTTP_X_FORWARDED_FOR $http_x_forwarded_for;
+        fastcgi_param HTTPS $http_x_forwarded_proto;
         fastcgi_hide_header X-Powered-By;
         fastcgi_buffer_size 128k;
         fastcgi_buffers 4 256k;
@@ -83,8 +86,8 @@ fi
 echo "==> Ensuring storage symlink..."
 php artisan storage:link || true
 
-echo "==> Running fresh database migrations..."
-php artisan migrate:fresh --force
+echo "==> Running database migrations..."
+php artisan migrate --force || php artisan migrate:fresh --force
 
 echo "==> Seeding database..."
 php artisan db:seed --force || true
