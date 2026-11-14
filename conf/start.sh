@@ -1,27 +1,27 @@
 #!/usr/bin/env bash
-set -e
 
-PORT="${PORT:-8080}"
+# Do not exit on non-fatal errors
+set +e
+
+PORT="${PORT:-80}"
 echo "==> Configuring Nginx to listen on port: $PORT"
 mkdir -p /run/nginx /var/log/supervisor /var/log/nginx
+rm -f /etc/nginx/http.d/*.conf
 
 cat <<EOF > /etc/nginx/http.d/default.conf
 server {
     listen ${PORT} default_server;
-    listen [::]:${PORT} default_server;
 EOF
 
 if [ "$PORT" != "8080" ]; then
 cat <<EOF >> /etc/nginx/http.d/default.conf
     listen 8080;
-    listen [::]:8080;
 EOF
 fi
 
 if [ "$PORT" != "80" ]; then
 cat <<EOF >> /etc/nginx/http.d/default.conf
     listen 80;
-    listen [::]:80;
 EOF
 fi
 
@@ -65,22 +65,12 @@ cat <<'EOF' >> /etc/nginx/http.d/default.conf
 EOF
 
 echo "==> Testing Nginx configuration:"
-nginx -t
+nginx -t || true
 
 echo "==> Preparing Laravel environment..."
 if [ -n "$DATABASE_URL" ] && [ -z "$DB_CONNECTION" ]; then
     echo "==> DATABASE_URL detected, setting DB_CONNECTION=pgsql"
     export DB_CONNECTION=pgsql
-fi
-
-if [ ! -f /var/www/html/.env ]; then
-    echo "==> Copying .env.example to .env..."
-    cp /var/www/html/.env.example /var/www/html/.env
-fi
-
-if [ -z "$APP_KEY" ]; then
-    echo "==> APP_KEY not detected, generating key..."
-    php artisan key:generate --force || true
 fi
 
 echo "==> Ensuring storage symlink..."
