@@ -29,7 +29,7 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 
 # Create runtime directories
-RUN mkdir -p /run/nginx /var/log/supervisor
+RUN mkdir -p /run/nginx /var/log/supervisor /var/log/nginx
 
 # Copy server configurations
 COPY conf/nginx/nginx-site.conf /etc/nginx/http.d/default.conf
@@ -53,6 +53,6 @@ ENV APP_ENV=production
 ENV APP_DEBUG=false
 ENV LOG_CHANNEL=stderr
 
-EXPOSE 80
+EXPOSE 8080 80
 
 CMD ["/start.sh"]

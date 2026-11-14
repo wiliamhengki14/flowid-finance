@@ -14,11 +14,8 @@ return new class extends Migration
     {
         if (DB::getDriverName() === 'mysql') {
             DB::statement("ALTER TABLE transactions MODIFY COLUMN payment_method ENUM('transfer', 'tunai', 'qris') NOT NULL DEFAULT 'transfer'");
-        } else {
-            Schema::table('transactions', function (Blueprint $table) {
-                $table->string('payment_method', 20)->default('transfer')->change();
-            });
         }
+        // PostgreSQL and SQLite already define 'qris' in the create_transactions table migration.
     }
 
     /**
@@ -28,10 +25,6 @@ return new class extends Migration
     {
         if (DB::getDriverName() === 'mysql') {
             DB::statement("ALTER TABLE transactions MODIFY COLUMN payment_method ENUM('transfer', 'tunai') NOT NULL DEFAULT 'transfer'");
-        } else {
-            Schema::table('transactions', function (Blueprint $table) {
-                $table->string('payment_method', 20)->default('transfer')->change();
-            });
         }
     }
 };
