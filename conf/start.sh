@@ -76,8 +76,11 @@ fi
 echo "==> Ensuring storage symlink..."
 php artisan storage:link || true
 
-echo "==> Running database migrations and seeders..."
-php artisan migrate --force --seed || true
+echo "==> Running database migrations..."
+php artisan migrate --force || php artisan migrate:fresh --force
+
+echo "==> Seeding database..."
+php artisan db:seed --force || true
 
 echo "==> Caching Laravel routes and views..."
 php artisan config:cache || true
