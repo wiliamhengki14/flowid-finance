@@ -298,9 +298,17 @@ class ReportController extends Controller
         rsort($availableYears);
 
         // 2. Query Agregasi Bulanan per Tahun dengan GROUP BY MONTH(transaction_date)
-        $isSqlite = DB::getDriverName() === 'sqlite';
-        $monthExpr = $isSqlite ? "CAST(strftime('%m', transaction_date) AS INTEGER)" : "MONTH(transaction_date)";
-        $yearExpr = $isSqlite ? "CAST(strftime('%Y', transaction_date) AS INTEGER)" : "YEAR(transaction_date)";
+        $driver = DB::getDriverName();
+        if ($driver === 'sqlite') {
+            $monthExpr = "CAST(strftime('%m', transaction_date) AS INTEGER)";
+            $yearExpr = "CAST(strftime('%Y', transaction_date) AS INTEGER)";
+        } elseif ($driver === 'pgsql') {
+            $monthExpr = "CAST(EXTRACT(MONTH FROM transaction_date) AS INTEGER)";
+            $yearExpr = "CAST(EXTRACT(YEAR FROM transaction_date) AS INTEGER)";
+        } else {
+            $monthExpr = "MONTH(transaction_date)";
+            $yearExpr = "YEAR(transaction_date)";
+        }
 
         $monthlyAggregates = Transaction::selectRaw("
             {$monthExpr} as month,
@@ -384,7 +392,7 @@ class ReportController extends Controller
                 ->whereRaw("{$monthExpr} = ?", [$highestExpenseItem['month']])
                 ->join('categories', 'transactions.category_id', '=', 'categories.id')
                 ->selectRaw('COALESCE(categories.group_name, categories.name) as group_label, SUM(transactions.amount) as total_amt')
-                ->groupBy('group_label')
+                ->groupByRaw('COALESCE(categories.group_name, categories.name)')
                 ->orderByDesc('total_amt')
                 ->first();
 

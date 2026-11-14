@@ -38,15 +38,17 @@ class TransactionController extends Controller
         $endDate = $referenceDate->copy()->endOfDay();
 
         $dailyFlows = Transaction::selectRaw("
-            DATE(transaction_date) as t_date,
+            transaction_date as t_date,
             COALESCE(SUM(CASE WHEN type = 'pemasukan' THEN amount ELSE 0 END), 0) as income,
             COALESCE(SUM(CASE WHEN type = 'pengeluaran' THEN amount ELSE 0 END), 0) as expense,
             COALESCE(SUM(amount), 0) as total_volume
         ")
             ->whereBetween('transaction_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-            ->groupBy('t_date')
+            ->groupBy('transaction_date')
             ->get()
-            ->keyBy('t_date');
+            ->keyBy(function ($item) {
+                return Carbon::parse($item->t_date)->format('Y-m-d');
+            });
 
         $monthNamesId = [
             1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr', 5 => 'Mei', 6 => 'Jun',
