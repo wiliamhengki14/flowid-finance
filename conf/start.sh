@@ -73,11 +73,18 @@ if [ -n "$DATABASE_URL" ] && [ -z "$DB_CONNECTION" ]; then
     export DB_CONNECTION=pgsql
 fi
 
+# Detect Neon PgBouncer pooler and switch to direct connection for full DDL support
+if [[ "$DATABASE_URL" == *"-pooler."* ]]; then
+    echo "==> Neon PgBouncer pooler detected in DATABASE_URL. Switching to direct non-pooled endpoint..."
+    export DATABASE_URL=$(echo "$DATABASE_URL" | sed 's/-pooler\././g')
+    export DB_URL="$DATABASE_URL"
+fi
+
 echo "==> Ensuring storage symlink..."
 php artisan storage:link || true
 
-echo "==> Running database migrations..."
-php artisan migrate --force || php artisan migrate:fresh --force
+echo "==> Running fresh database migrations..."
+php artisan migrate:fresh --force
 
 echo "==> Seeding database..."
 php artisan db:seed --force || true
